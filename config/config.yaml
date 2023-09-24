@@ -1,0 +1,10 @@
+server:
+  host: localhost
+  port: 8080
+  name: HelloWorld
+logger:
+  path: logs/
+  rotating: false
+watcher:
+  directories:
+    - 'D:\projects\4.go\1. file-sync\test'
