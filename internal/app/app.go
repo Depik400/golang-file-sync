@@ -1,9 +1,9 @@
 package app
 
 import (
-	"1._file-sync/internal/config"
-	"1._file-sync/internal/container"
 	"fmt"
+	"golang-file-sync/internal/config"
+	"golang-file-sync/internal/container"
 )
 
 func Run(configPath string) int {

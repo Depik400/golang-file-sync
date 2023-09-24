@@ -1,10 +1,10 @@
 package services
 
 import (
-	"1._file-sync/pkg/logger"
-	"1._file-sync/pkg/watcher"
 	"fmt"
 	"github.com/fsnotify/fsnotify"
+	"golang-file-sync/pkg/logger"
+	"golang-file-sync/pkg/watcher"
 	"time"
 )
 
@@ -20,13 +20,13 @@ func (w *WatcherService) windowsTransaction() {
 	toCreate := "\n"
 	toDelete := "\n"
 	toUpdate := "\n"
-	for file, _ := range w.created {
+	for file := range w.created {
 		toCreate += fmt.Sprintf("\t\t - File '%s'\n", file)
 	}
-	for file, _ := range w.updated {
+	for file := range w.updated {
 		toUpdate += fmt.Sprintf("\t\t - File '%s'\n", file)
 	}
-	for file, _ := range w.removed {
+	for file := range w.removed {
 		toDelete += fmt.Sprintf("\t\t - File '%s'", file)
 	}
 	go w.logger.Info(fmt.Sprintf("\n\t\tcreated: %s\t\tupdated: %s\t\tdeleted: %s", toCreate, toUpdate, toDelete))

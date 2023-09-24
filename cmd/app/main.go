@@ -1,8 +1,8 @@
 package main
 
 import (
-	"1._file-sync/internal/app"
 	"flag"
+	"golang-file-sync/internal/app"
 )
 
 const configPath = "config/config.yaml"

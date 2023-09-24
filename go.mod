@@ -1,4 +1,4 @@
-module 1._file-sync
+module golang-file-sync
 
 go 1.19
 

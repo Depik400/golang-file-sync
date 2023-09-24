@@ -1,10 +1,10 @@
 package container
 
 import (
-	"1._file-sync/internal/config"
-	"1._file-sync/internal/services"
-	"1._file-sync/pkg/logger"
-	"1._file-sync/pkg/watcher"
+	"golang-file-sync/internal/config"
+	"golang-file-sync/internal/services"
+	"golang-file-sync/pkg/logger"
+	"golang-file-sync/pkg/watcher"
 	"sync"
 )
 
@@ -46,12 +46,4 @@ func initWatcherService(config *config.Config) {
 
 func GetContainer() *Container {
 	return _container
-}
-
-func Shutdown() {
-	close(_close)
-}
-
-func GetWaitGroup() *sync.WaitGroup {
-	return _group
 }
