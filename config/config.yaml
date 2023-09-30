@@ -7,4 +7,4 @@ logger:
   rotating: false
 watcher:
   directories:
-    - 'D:\projects\4.go\1. file-sync\test'
+    - 'D:\projects\4.go\test2'

@@ -22,17 +22,20 @@ func (w *Watcher) AddErrorHandler(handler ErrorHandlerF) {
 
 func (w *Watcher) AddPathes(pathes []string) {
 	for _, s := range pathes {
-		w.FileWatcher.Add(s)
+		err := w.FileWatcher.Add(s)
+		if err != nil {
+			return
+		}
 	}
 
 }
 
 func (w *Watcher) initWatcher() {
 	watcher, err := fsnotify.NewWatcher()
-	w.FileWatcher = watcher
 	if err != nil {
 		log.Fatal(err)
 	}
+	w.FileWatcher = watcher
 
 	go func() {
 		for {
@@ -51,9 +54,9 @@ func (w *Watcher) initWatcher() {
 				for _, funcs := range *w.Errors {
 					go (funcs)(err)
 				}
-			case <-w.Close:
-				w.FileWatcher.Close()
-				return
+				//case <-w.Close:
+				//	w.FileWatcher.Close()
+				//	return
 			}
 		}
 	}()
@@ -63,8 +66,8 @@ func (w *Watcher) initWatcher() {
 	}
 }
 
-func NewWatcher(close chan bool) *Watcher {
-	watcher := &Watcher{Close: close, Errors: &[]ErrorHandlerF{}, Handlers: &[]HandlerF{}}
+func NewWatcher() *Watcher {
+	watcher := &Watcher{Close: make(chan bool), Errors: &[]ErrorHandlerF{}, Handlers: &[]HandlerF{}}
 	watcher.initWatcher()
 	return watcher
 }

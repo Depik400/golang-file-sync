@@ -2,28 +2,34 @@ package container
 
 import (
 	"golang-file-sync/internal/config"
+	"golang-file-sync/internal/repository"
 	"golang-file-sync/internal/services"
+	"golang-file-sync/pkg/db"
 	"golang-file-sync/pkg/logger"
 	"golang-file-sync/pkg/watcher"
-	"sync"
 )
 
 type Container struct {
-	Logger         logger.ILogger
-	WatcherService services.IWatchService
+	Logger            logger.ILogger
+	Database          db.IDatabase
+	Watcher           watcher.IWatcher
+	WatcherService    services.IWatchService
+	WatcherRepository repository.IWatcherRepository
 }
 
 var _container *Container
 
-var _group = &sync.WaitGroup{}
-
-var _close = make(chan bool, 1)
-
 func InitContainer(config *config.Config) {
 	_container = &Container{}
 	initLogger(config)
-	initWatcherService(config)
-	_group.Add(1)
+	initDatabase(config)
+	initWatcher(config)
+	initRepositories(config)
+	initServices(config)
+}
+
+func initDatabase(config *config.Config) {
+	_container.Database = db.NewSqlLiteDatabase()
 }
 
 func initLogger(config *config.Config) {
@@ -38,10 +44,21 @@ func initLogger(config *config.Config) {
 	}
 }
 
-func initWatcherService(config *config.Config) {
-	newWatcher := watcher.NewWatcher(_close)
-	newWatcher.AddPathes(config.Watcher.Directories)
-	_container.WatcherService = services.NewWatcherService(newWatcher, _container.Logger)
+func initWatcher(config *config.Config) {
+	_container.Watcher = watcher.NewWatcher()
+	_container.Watcher.AddPathes(config.Watcher.Directories)
+}
+
+func initRepositories(config *config.Config) {
+	_container.WatcherRepository = repository.NewWatcherRepository(_container.Database)
+}
+
+func initServices(config *config.Config) {
+	_container.WatcherService = services.NewWatcherService(
+		_container.Watcher,
+		_container.Logger,
+		_container.WatcherRepository,
+	)
 }
 
 func GetContainer() *Container {
