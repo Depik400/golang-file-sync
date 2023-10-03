@@ -2,14 +2,16 @@ package config
 
 import (
 	"github.com/go-yaml/yaml"
+	"log"
 	"os"
 )
 
 type Config struct {
 	Server struct {
-		Name string `yaml:"name"`
-		Host string `yaml:"host"`
-		Port string `yaml:"port"`
+		Name     string   `yaml:"name"`
+		Host     string   `yaml:"host"`
+		Port     string   `yaml:"port"`
+		Comrades []string `yaml:"comrades"`
 	}
 	Logger struct {
 		Type     string `yaml:"type"`
@@ -17,7 +19,7 @@ type Config struct {
 		Rotating bool   `yaml:"rotating"`
 	}
 	Watcher struct {
-		Directories []string `yaml:"directories"`
+		Directories map[string]string `yaml:"directories"`
 	}
 }
 
@@ -53,9 +55,15 @@ func NewConfig(configPath string) (*Config, error) {
 	if err != nil {
 		return nil, newErrorConfig()
 	}
-	defer file.Close()
+	defer func(file *os.File) {
+		err := file.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}(file)
 	yamlDecoder := yaml.NewDecoder(file)
 	if err := yamlDecoder.Decode(&config); err != nil {
+		log.Fatal(err)
 		return nil, err
 	}
 	attachDefaults(config)

@@ -3,13 +3,15 @@ package watcher
 import (
 	"github.com/fsnotify/fsnotify"
 	"log"
+	"path/filepath"
 )
 
 type Watcher struct {
 	Handlers    *[]HandlerF
 	Errors      *[]ErrorHandlerF
 	FileWatcher *fsnotify.Watcher
-	Close       chan bool
+	Directories *map[string]string
+	Pause       chan bool
 }
 
 func (w *Watcher) AddHandler(handler HandlerF) {
@@ -20,14 +22,32 @@ func (w *Watcher) AddErrorHandler(handler ErrorHandlerF) {
 	*w.Errors = append(*w.Errors, handler)
 }
 
-func (w *Watcher) AddPathes(pathes []string) {
-	for _, s := range pathes {
+func (w *Watcher) AddPathes(m *map[string]string) {
+	for k, s := range *m {
 		err := w.FileWatcher.Add(s)
+		(*w.Directories)[k] = s
 		if err != nil {
+			log.Fatal(err)
 			return
 		}
 	}
+}
 
+func (w *Watcher) resolveEvent(event *fsnotify.Event) *Event {
+	dir, file := filepath.Split(event.Name)
+	var findedKey string
+	for key, directory := range *w.Directories {
+		if directory == dir || directory == dir[:len(dir)-1] {
+			findedKey = key
+			dir = directory
+		}
+	}
+	return &Event{
+		Event:          event,
+		Directory:      dir,
+		Filename:       file,
+		DirectoryAlias: findedKey,
+	}
 }
 
 func (w *Watcher) initWatcher() {
@@ -45,7 +65,8 @@ func (w *Watcher) initWatcher() {
 					return
 				}
 				for _, funcs := range *w.Handlers {
-					go (funcs)(event)
+					resolvedEvent := w.resolveEvent(&event)
+					go (funcs)(resolvedEvent)
 				}
 			case err, ok := <-w.FileWatcher.Errors:
 				if !ok {
@@ -54,9 +75,6 @@ func (w *Watcher) initWatcher() {
 				for _, funcs := range *w.Errors {
 					go (funcs)(err)
 				}
-				//case <-w.Close:
-				//	w.FileWatcher.Close()
-				//	return
 			}
 		}
 	}()
@@ -67,7 +85,12 @@ func (w *Watcher) initWatcher() {
 }
 
 func NewWatcher() *Watcher {
-	watcher := &Watcher{Close: make(chan bool), Errors: &[]ErrorHandlerF{}, Handlers: &[]HandlerF{}}
+	watcher := &Watcher{
+		Pause:       make(chan bool),
+		Handlers:    &[]HandlerF{},
+		Errors:      &[]ErrorHandlerF{},
+		Directories: &map[string]string{},
+	}
 	watcher.initWatcher()
 	return watcher
 }

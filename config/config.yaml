@@ -2,9 +2,11 @@ server:
   host: localhost
   port: 8080
   name: HelloWorld
+  comrades:
+    - 'localhost:8081'
 logger:
   path: logs/
   rotating: false
 watcher:
   directories:
-    - 'D:\projects\4.go\test2'
+    alias1: 'D:\projects\4.go\test2'

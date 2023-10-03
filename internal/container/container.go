@@ -2,6 +2,8 @@ package container
 
 import (
 	"golang-file-sync/internal/config"
+	"golang-file-sync/internal/delivery"
+	"golang-file-sync/internal/delivery/tcp"
 	"golang-file-sync/internal/repository"
 	"golang-file-sync/internal/services"
 	"golang-file-sync/pkg/db"
@@ -13,7 +15,9 @@ type Container struct {
 	Logger            logger.ILogger
 	Database          db.IDatabase
 	Watcher           watcher.IWatcher
+	Delivery          delivery.IDelivery
 	WatcherService    services.IWatchService
+	SyncService       services.ISyncService
 	WatcherRepository repository.IWatcherRepository
 }
 
@@ -24,6 +28,7 @@ func InitContainer(config *config.Config) {
 	initLogger(config)
 	initDatabase(config)
 	initWatcher(config)
+	initDelivery(config)
 	initRepositories(config)
 	initServices(config)
 }
@@ -46,7 +51,11 @@ func initLogger(config *config.Config) {
 
 func initWatcher(config *config.Config) {
 	_container.Watcher = watcher.NewWatcher()
-	_container.Watcher.AddPathes(config.Watcher.Directories)
+	_container.Watcher.AddPathes(&config.Watcher.Directories)
+}
+
+func initDelivery(config *config.Config) {
+	_container.Delivery = tcp.NewTcpDelivery(config.Server.Port, config.Server.Comrades, _container.Logger)
 }
 
 func initRepositories(config *config.Config) {
@@ -58,6 +67,10 @@ func initServices(config *config.Config) {
 		_container.Watcher,
 		_container.Logger,
 		_container.WatcherRepository,
+	)
+	_container.SyncService = services.NewSyncService(
+		_container.Delivery,
+		_container.Logger,
 	)
 }
 

@@ -16,19 +16,38 @@ type WatcherService struct {
 }
 
 func (w *WatcherService) windowsHandlers() watcher.HandlerF {
-	return func(event fsnotify.Event) {
+	return func(event *watcher.Event) {
 		if event.Has(fsnotify.Create) {
 			go w.logger.Info(fmt.Sprintf("File %s was created", event.Name))
-			go w.repository.Insert(&models.WatcherModel{DirectoryName: "test", FileName: "test", ActionKey: "create"})
+			go w.repository.Insert(&models.WatcherModel{
+				DirectoryName: event.DirectoryAlias,
+				FileName:      event.Filename,
+				ActionKey:     "create",
+			})
 		}
 		if event.Has(fsnotify.Remove) {
 			go w.logger.Info(fmt.Sprintf("File %s was removed", event.Name))
+			go w.repository.Insert(&models.WatcherModel{
+				DirectoryName: event.DirectoryAlias,
+				FileName:      event.Filename,
+				ActionKey:     "remove",
+			})
 		}
 		if event.Has(fsnotify.Write) {
 			go w.logger.Info(fmt.Sprintf("File %s was updated", event.Name))
+			go w.repository.Insert(&models.WatcherModel{
+				DirectoryName: event.DirectoryAlias,
+				FileName:      event.Filename,
+				ActionKey:     "update",
+			})
 		}
 		if event.Has(fsnotify.Rename) {
 			go w.logger.Info(fmt.Sprintf("File %s was Rename", event.Name))
+			go w.repository.Insert(&models.WatcherModel{
+				DirectoryName: event.DirectoryAlias,
+				FileName:      event.Filename,
+				ActionKey:     "remove",
+			})
 		}
 		if event.Has(fsnotify.Chmod) {
 			go w.logger.Info(fmt.Sprintf("File %s was Chmod", event.Name))
@@ -38,6 +57,9 @@ func (w *WatcherService) windowsHandlers() watcher.HandlerF {
 
 func (w *WatcherService) Run() {
 	w.watcher.AddHandler(w.windowsHandlers())
+}
+
+func (w *WatcherService) Stop() {
 }
 
 // TODO ProvideDependencyContainer

@@ -6,4 +6,5 @@ type IWatcherRepository interface {
 	Insert(model *models.WatcherModel)
 	Find()
 	All()
+	GetListOfLastActions() *[]models.WatcherModel
 }
