@@ -17,7 +17,12 @@ func (service *SyncService) Run() {
 		select {
 		case message := <-channel:
 			go service.logger.Info(fmt.Sprintf("message %s", message))
-			go service.delivery.WriteMessage([]byte("Hello from server\n"))
+			go service.delivery.WriteMessage([]byte("Hello from server\n"), message.Connection)
+			switch message.Cmd {
+			case "file":
+				{
+				}
+			}
 		}
 	}()
 }
