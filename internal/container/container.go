@@ -71,6 +71,7 @@ func initServices(config *config.Config) {
 	_container.SyncService = services.NewSyncService(
 		_container.Delivery,
 		_container.Logger,
+		_container.WatcherService,
 	)
 }
 

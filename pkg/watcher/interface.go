@@ -1,6 +1,6 @@
 package watcher
 
-type HandlerF func(event *Event)
+type HandlerF func(event Event)
 type ErrorHandlerF func(event error)
 
 type IWatcher interface {

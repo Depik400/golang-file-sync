@@ -9,4 +9,4 @@ logger:
   rotating: false
 watcher:
   directories:
-    alias1: 'D:\projects\4.go\test2'
+    alias1: 'D:\projects\4.go\test3'

@@ -66,7 +66,7 @@ func (w *Watcher) initWatcher() {
 				}
 				for _, funcs := range *w.Handlers {
 					resolvedEvent := w.resolveEvent(&event)
-					go (funcs)(resolvedEvent)
+					go (funcs)(*resolvedEvent)
 				}
 			case err, ok := <-w.FileWatcher.Errors:
 				if !ok {

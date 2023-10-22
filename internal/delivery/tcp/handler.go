@@ -41,10 +41,15 @@ func (w *TcpDelivery) Run() {
 					}
 					message := w.prepareMessage(messageString)
 					message.Connection = conn
-					w.messageHandler(message)
+					//w.Logger.Info(fmt.Sprintf("Local address:%s\nRemote address: %s", conn.LocalAddr().String(), conn.RemoteAddr().String()))
+					if isHandled := w.messageHandler(message); !isHandled {
+						w.messages <- *message
+					}
+					if message.Cmd == "file" {
+						break
+					}
 				}
 			}()
-			//TcpDelivery.messages <- delivery.IMessage{Message: message, Connection: conn}
 
 		}
 	}()
@@ -60,8 +65,38 @@ func (w *TcpDelivery) messageHandler(message *delivery.IMessage) bool {
 		w.Logger.Info("new server is up")
 		w.reinitConnections()
 		break
+	case "ping":
+		isHandled = true
+		break
 	}
+
 	return isHandled
+}
+
+func (w *TcpDelivery) PushMessageAll(message *delivery.IMessage) {
+	for _, socket := range w.Sockets {
+		obj, err := json.Marshal(*message)
+		if err != nil {
+			w.Logger.Error(err.Error())
+			continue
+		}
+		obj = append(obj, []byte("\n")...)
+		socket.Write(obj)
+	}
+}
+
+func (w *TcpDelivery) PushFileToAll(message *delivery.IMessage) *[]net.Conn {
+	fileSockets := []net.Conn{}
+	for _, comrade := range w.Comrades {
+		if conn, err := net.Dial("tcp", comrade); err == nil {
+			fileSockets = append(fileSockets, conn)
+		}
+	}
+	msgString, _ := json.Marshal(*message)
+	for _, socket := range fileSockets {
+		socket.Write(append(msgString, []byte("\n")...))
+	}
+	return &fileSockets
 }
 
 func (w *TcpDelivery) prepareMessage(str string) *delivery.IMessage {
