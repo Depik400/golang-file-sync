@@ -11,9 +11,10 @@ import (
 )
 
 type SyncService struct {
-	delivery delivery.IDelivery
-	logger   logger.ILogger
-	watcher  IWatchService
+	delivery      delivery.IDelivery
+	logger        logger.ILogger
+	watcher       IWatchService
+	locationAlias map[string]string
 }
 
 func (service *SyncService) Run() {
@@ -27,6 +28,8 @@ func (service *SyncService) Run() {
 			case "file":
 				{
 					buf := make([]byte, 1024*1024)
+					path := service.locationAlias[message.Metadata.LocationName]
+					file, _ := os.OpenFile(filepath.Join(path, message.Metadata.FileName), os.O_TRUNC|os.O_WRONLY, 0666)
 					for {
 						n, err := message.Connection.Read(buf)
 						if err != nil {
@@ -35,10 +38,16 @@ func (service *SyncService) Run() {
 							}
 							break
 						}
+						file.Write(buf)
 						log.Printf("received: %s", string(buf[:n]))
 						log.Printf("bytes: %d", n)
+						buf = buf[:0]
 					}
-					message.Connection.Close()
+					file.Close()
+					err := message.Connection.Close()
+					if err != nil {
+						service.logger.Info("Socket for file receiving is closed")
+					}
 				}
 			}
 		}
@@ -66,7 +75,10 @@ func (service *SyncService) Run() {
 					if err != nil {
 						log.Fatal(err)
 					}
-					pw.Close()
+					err = pw.Close()
+					if err != nil {
+						service.logger.Error(err.Error())
+					}
 					log.Printf("copied to piped writer via the compressed writer: %d", n)
 				}()
 
@@ -74,17 +86,21 @@ func (service *SyncService) Run() {
 				if err != nil {
 					log.Fatal(err)
 				}
-				socket.Close()
+				err = socket.Close()
+				if err != nil {
+					service.logger.Info("got error while closing file socket")
+				}
 				log.Printf("copied to connection: %d", n)
 			}
 		}
 	}()
 }
 
-func NewSyncService(delivery delivery.IDelivery, iLogger logger.ILogger, service IWatchService) *SyncService {
+func NewSyncService(delivery delivery.IDelivery, iLogger logger.ILogger, service IWatchService, m map[string]string) *SyncService {
 	return &SyncService{
 		delivery,
 		iLogger,
 		service,
+		m,
 	}
 }

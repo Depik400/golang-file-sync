@@ -72,6 +72,7 @@ func initServices(config *config.Config) {
 		_container.Delivery,
 		_container.Logger,
 		_container.WatcherService,
+		config.Watcher.Directories,
 	)
 }
 
